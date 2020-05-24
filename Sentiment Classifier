@@ -1,0 +1,84 @@
+
+\
+write code that opens the file project_twitter_data.csv which has the fake generated twitter data (the text of a tweet, the number of retweets of that tweet, and the number of replies to that tweet). Your task is to build a sentiment classifier, which will detect how positive or negative each tweet is. Copy the code from the code windows above, and put that in the top of this code window. Now, you will write code to create a csv file called resulting_data.csv, which contains the Number of Retweets, Number of Replies, Positive Score (which is how many happy words are in the tweet), Negative Score (which is how many angry words are in the tweet), and the Net Score (how positive or negative the text is overall) for each tweet. The file should have those headers in that order.
+You will upload the csv file to Excel or Google Sheets and produce a graph of the Net Score vs Number of Retweets.
+\
+punctuation_chars = ["'", '"', ",", ".", "!", ":", ";", '#', '@']
+# lists of words to use
+positive_words = []
+with open("positive_words.txt") as pos_f:
+    for lin in pos_f:
+        if lin[0] != ';' and lin[0] != '\n':
+            positive_words.append(lin.strip())
+
+
+negative_words = []
+with open("negative_words.txt") as pos_f:
+    for lin in pos_f:
+        if lin[0] != ';' and lin[0] != '\n':
+            negative_words.append(lin.strip())
+
+def strip_punctuation(tweet): 
+    """To strip punctuation from words"""
+    a=list(tweet)
+    for i in a:
+        if i in punctuation_chars:
+            a.remove(i)
+    b=("").join(a)
+    return b
+
+def get_neg(s):
+    """ Function to get all negative words"""
+    a=s.split()
+    l=[]
+    c=0
+    for i in a:
+        s=strip_punctuation(i)
+        l.append(s)
+    for i in l:
+        j=i.lower()
+        if j in negative_words:
+            c=c+1
+    return c
+
+def get_pos(s):
+    """Function to get all positive words from tweets"""
+    a=s.split()
+    l=[]
+    c=0
+    for i in a:
+        s=strip_punctuation(i)
+        l.append(s)
+    for i in l:
+        j=i.lower()
+        if j in positive_words:
+            c=c+1
+    return c
+
+# Main function: Here tweet file is opened and the required file is created
+fn="project_twitter_data.csv"
+handle=open(fn,'r')
+tweets=handle.readlines()
+prj="resulting_data.csv"
+hand=open(prj,'w')
+header="Number of Retweets, Number of Replies, Positive Score, Negative Score, Net Score"
+hand.write(header)
+hand.write("\n")
+#print(tweets[0])
+for i in tweets[1:]:
+    l=i.split(",")
+    #print(l)
+    pos=get_pos(l[0])
+    neg=get_neg(l[0])
+    #print([pos,neg])
+    retweet=int(l[1])
+    reply=int(l[2])
+    #print([retweet,reply])
+    net=pos-neg
+    row="{},{},{},{},{}".format(retweet,reply,pos,neg,net)
+    #print(row)
+    hand.write(row)
+    hand.write("\n")
+    
+hand.close()
+handle.close()
