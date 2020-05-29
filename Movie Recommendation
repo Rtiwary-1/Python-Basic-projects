@@ -1,0 +1,83 @@
+/
+This project will take you through the process of mashing up data from two different APIs to make movie recommendations. The TasteDive API lets you provide a movie (or bands, TV shows, etc.) as a query input, and returns a set of related items. The OMDB API lets you provide a movie title as a query input and get back data about the movie, including scores from various review sites (Rotten Tomatoes, IMDB, etc.).
+
+You will put those two together. You will use TasteDive to get related movies for a whole list of titles. You’ll combine the resulting lists of related movies, and sort them according to their Rotten Tomatoes scores (which will require making API calls to the OMDB API.)
+
+Define a function, called get_movies_from_tastedive. It should take one input parameter, a string that is the name of a movie or music artist. The function should return the 5 TasteDive results that are associated with that string; be sure to only get movies, not other kinds of media. It will be a python dictionary with just one key, ‘Similar’.
+Next, you will need to write a function that extracts just the list of movie titles from a dictionary returned by get_movies_from_tastedive. Call it extract_movie_titles.
+Next, you’ll write a function, called get_related_titles. It takes a list of movie titles as input. It gets five related movies for each from TasteDive, extracts the titles for all of them, and combines them all into a single list. Don’t include the same movie twice.
+Your next task will be to fetch data from OMDB. The documentation for the API is at https://www.omdbapi.com/
+
+Define a function called get_movie_data. It takes in one parameter which is a string that should represent the title of a movie you want to search. The function should return a dictionary with information about that movie.
+Now write a function called get_movie_rating. It takes an OMDB dictionary result for one movie and extracts the Rotten Tomatoes rating as an integer. For example, if given the OMDB dictionary for “Black Panther”, it would return 97. If there is no Rotten Tomatoes rating, return 0.
+Define a function get_sorted_recommendations. It takes a list of movie titles as an input. It returns a sorted list of related movie titles as output, up to five related movies for each input movie title. The movies should be sorted in descending order by their Rotten Tomatoes rating, as returned by the get_movie_rating function. Break ties in reverse alphabetic order, so that ‘Yahşi Batı’ comes before ‘Eyyvah Eyvah’.
+/
+
+import requests_with_caching
+
+def get_movies_from_tastedive(str):
+    base="https://tastedive.com/api/similar"
+    par={}
+    par['q']=str
+    par['type']="movies"
+    par['limit']=5
+    rec=requests_with_caching.get(base,params=par)
+    p=rec.json()
+    #print(p)
+    return p
+
+
+def extract_movie_titles(fn):
+    film=fn['Similar']['Results']
+    #print(film)
+    l=[]
+    for i in film:
+        l.append(i['Name'])
+    #print(l)
+    return l
+
+
+def get_related_titles(lst):
+    l=[]
+    for str in lst:
+        fm=extract_movie_titles(get_movies_from_tastedive(str))
+        for i in fm:
+            if i not in l:
+                l.append(i)
+    return l
+
+
+def get_movie_data(str):
+    base='http://www.omdbapi.com/'
+    par={}
+    par['t']=str
+    par['r']='json'
+    omdb=requests_with_caching.get(base,params=par)
+    #print(omdb.text[:150])
+    d=omdb.json()
+    return d
+
+
+def get_movie_rating(res):
+    pd=res['Ratings']
+    #print(pd)
+    q=0
+    for i in pd:
+        if i["Source"]=='Rotten Tomatoes':
+            p=i['Value']
+            #print(p)
+            m=p.rstrip("%")
+            q=int(m)
+    return q
+
+# some invocations that we use in the automated tests; uncomment these if you are getting errors and want better error messages
+# get_sorted_recommendations(["Bridesmaids", "Sherlock Holmes"])
+def get_sorted_recommendations(lst):
+    l=get_related_titles(lst)
+    print(l)
+    new_dict={}
+    for i in l:
+        new_dict[i]=get_movie_rating(get_movie_data(i))
+    l= [i[0] for i in sorted(new_dict.items(), key=lambda item: (item[1], item[0]), reverse=True)]
+    #print(l)
+    return l
